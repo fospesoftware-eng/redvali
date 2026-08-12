@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Red Valley - AI Authenticity & Fact Checker",
   "version": "1.0.0",
-  "description": "Chrome extension to analyze Reddit post authenticity, claim verifiability, AI content probability, source credibility, and author signals.",
+  "description": "Enterprise Chrome extension to analyze Reddit post authenticity, community engagement quality, claim verifiability, AI content probability, source credibility, and author signals.",
   "permissions": [
     "storage",
     "activeTab",
@@ -32,12 +32,29 @@
   ],
   "action": {
     "default_popup": "popup/popup.html",
-    "default_title": "Red Valley",
-    "default_icon": "icons/icon48.png"
+    "default_title": "Red Valley - Reddit Authenticity & Fact Checker",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "32": "icons/icon32.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
   },
   "icons": {
     "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
     "48": "icons/icon48.png",
     "128": "icons/icon128.png"
-  }
+  },
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "icons/*",
+        "content/content.css"
+      ],
+      "matches": [
+        "https://*.reddit.com/*"
+      ]
+    }
+  ]
 }
