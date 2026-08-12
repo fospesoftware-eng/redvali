@@ -3,44 +3,56 @@ const http = require('http');
 const https = require('https');
 
 /**
- * Unified LLM helper with multi-provider failover
+ * Unified LLM helper with sub-second failover and instant fallback
  */
 class LLMService {
   /**
-   * Send prompt to available LLM or fallback
+   * Send prompt to available LLM or fast fallback
    */
   async generateJSON(systemPrompt, userPrompt) {
-    // Try OpenAI
+    if (env.LLM_PROVIDER === 'builtin') {
+      return null; // Instant heuristic fallback
+    }
+
+    // Fast Race Guard: Max 1.2s for LLM responses, otherwise instant heuristic fallback
+    return Promise.race([
+      this.executeLLMProviders(systemPrompt, userPrompt),
+      new Promise(resolve => setTimeout(() => resolve(null), 1200))
+    ]);
+  }
+
+  async executeLLMProviders(systemPrompt, userPrompt) {
+    // Try OpenAI if Key Provided
     if (env.OPENAI_API_KEY && (env.LLM_PROVIDER === 'openai' || env.LLM_PROVIDER === 'auto')) {
       try {
         const res = await this.callOpenAI(systemPrompt, userPrompt);
         if (res) return res;
       } catch (err) {
-        console.warn('[LLMService] OpenAI call failed, trying next provider...', err.message);
+        console.warn('[LLMService] OpenAI call failed, falling back:', err.message);
       }
     }
 
-    // Try Gemini
+    // Try Gemini if Key Provided
     if (env.GEMINI_API_KEY && (env.LLM_PROVIDER === 'gemini' || env.LLM_PROVIDER === 'auto')) {
       try {
         const res = await this.callGemini(systemPrompt, userPrompt);
         if (res) return res;
       } catch (err) {
-        console.warn('[LLMService] Gemini call failed, trying next provider...', err.message);
+        console.warn('[LLMService] Gemini call failed, falling back:', err.message);
       }
     }
 
-    // Try Ollama local
-    if (env.LLM_PROVIDER === 'ollama' || env.LLM_PROVIDER === 'auto') {
+    // Try Ollama ONLY if explicitly requested or specified as provider
+    if (env.LLM_PROVIDER === 'ollama') {
       try {
         const res = await this.callOllama(systemPrompt, userPrompt);
         if (res) return res;
       } catch (err) {
-        // Ollama might not be running locally, silent fallback
+        console.warn('[LLMService] Ollama call failed:', err.message);
       }
     }
 
-    return null; // Signals fallback to heuristic/NLP analyzer
+    return null; // Instant heuristic fallback
   }
 
   async callOpenAI(systemPrompt, userPrompt) {
@@ -60,7 +72,7 @@ class LLMService {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${env.OPENAI_API_KEY}`
       }
-    }, data);
+    }, data, 1000);
 
     const json = JSON.parse(responseText);
     const content = json.choices?.[0]?.message?.content;
@@ -83,7 +95,7 @@ class LLMService {
     const responseText = await this.httpRequest(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' }
-    }, data);
+    }, data, 1000);
 
     const json = JSON.parse(responseText);
     const text = json.candidates?.[0]?.content?.parts?.[0]?.text;
@@ -102,13 +114,13 @@ class LLMService {
     const responseText = await this.httpRequest(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' }
-    }, data, 3000); // 3s timeout for local check
+    }, data, 800); // 800ms fast timeout
 
     const json = JSON.parse(responseText);
     return json.response ? JSON.parse(json.response) : null;
   }
 
-  httpRequest(urlStr, options, bodyData, timeoutMs = 15000) {
+  httpRequest(urlStr, options, bodyData, timeoutMs = 1000) {
     return new Promise((resolve, reject) => {
       const url = new URL(urlStr);
       const client = url.protocol === 'https:' ? https : http;
