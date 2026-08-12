@@ -17,7 +17,7 @@ chrome.runtime.onInstalled.addListener(() => {
 // Handle incoming messages from Content Scripts and Popup UI
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === 'VALIDATE_POST') {
-    handleValidatePost(request.payload)
+    handleValidatePost(request.payload, request.forceRefresh)
       .then(report => sendResponse({ status: 'success', data: report }))
       .catch(err => {
         console.error('[RedValley Background] Validation error:', err.message);
@@ -89,18 +89,20 @@ async function setCachedReport(postId, report) {
   }
 }
 
-async function handleValidatePost(postPayload) {
+async function handleValidatePost(postPayload, forceRefresh = false) {
   if (!postPayload || (!postPayload.id && !postPayload.title)) {
     throw new Error('Invalid post payload format. Title or ID required.');
   }
 
   const postId = postPayload.id || `post_${postPayload.title.substring(0, 20)}`;
 
-  // Check Cache
-  const cached = await getCachedReport(postId);
-  if (cached) {
-    console.log('[RedValley Background] Returning cached report for:', postId);
-    return cached;
+  // Check Cache if not forcing refresh
+  if (!forceRefresh) {
+    const cached = await getCachedReport(postId);
+    if (cached) {
+      console.log('[RedValley Background] Returning cached report for:', postId);
+      return cached;
+    }
   }
 
   // Get API Endpoint URL from storage

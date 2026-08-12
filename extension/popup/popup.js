@@ -62,10 +62,21 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('errorMsgText').textContent = message || 'Validation request failed.';
   }
 
-  const triggerActiveScan = () => {
-    const btn = document.getElementById('btnScanActive');
-    btn.textContent = '⏳ Analyzing Post...';
-    btn.disabled = true;
+  const triggerActiveScan = (forceRefresh = false) => {
+    const btnScan = document.getElementById('btnScanActive');
+    const btnRescan = document.getElementById('btnRescan');
+
+    if (forceRefresh) {
+      if (btnRescan) {
+        btnRescan.textContent = '⏳ Rescanning...';
+        btnRescan.disabled = true;
+      }
+    } else {
+      if (btnScan) {
+        btnScan.textContent = '⏳ Analyzing Post...';
+        btnScan.disabled = true;
+      }
+    }
 
     document.getElementById('errorView').classList.add('hidden');
 
@@ -73,14 +84,12 @@ document.addEventListener('DOMContentLoaded', async () => {
       const activeTab = tabs[0];
       if (!activeTab || !activeTab.id || !activeTab.url?.includes('reddit.com')) {
         showToast('⚠️ Please open a post on reddit.com first.');
-        btn.textContent = '⚡ Scan Current Post';
-        btn.disabled = false;
+        resetButtons();
         return;
       }
 
-      chrome.tabs.sendMessage(activeTab.id, { action: 'TRIGGER_ACTIVE_POST_SCAN' }, (res) => {
-        btn.textContent = '⚡ Scan Current Post';
-        btn.disabled = false;
+      chrome.tabs.sendMessage(activeTab.id, { action: 'TRIGGER_ACTIVE_POST_SCAN', forceRefresh }, (res) => {
+        resetButtons();
 
         if (chrome.runtime.lastError) {
           // Dynamic injection fallback
@@ -93,7 +102,7 @@ document.addEventListener('DOMContentLoaded', async () => {
               files: ['content/content.css']
             }, () => {
               setTimeout(() => {
-                chrome.tabs.sendMessage(activeTab.id, { action: 'TRIGGER_ACTIVE_POST_SCAN' }, (res2) => {
+                chrome.tabs.sendMessage(activeTab.id, { action: 'TRIGGER_ACTIVE_POST_SCAN', forceRefresh }, (res2) => {
                   if (res2 && res2.status === 'success' && res2.data) {
                     renderReportView(res2.data);
                   } else {
@@ -112,9 +121,22 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   };
 
-  document.getElementById('btnScanActive').addEventListener('click', triggerActiveScan);
-  document.getElementById('btnRescan').addEventListener('click', triggerActiveScan);
-  document.getElementById('btnRetryScan').addEventListener('click', triggerActiveScan);
+  function resetButtons() {
+    const btnScan = document.getElementById('btnScanActive');
+    const btnRescan = document.getElementById('btnRescan');
+    if (btnScan) {
+      btnScan.textContent = '⚡ Scan Current Post';
+      btnScan.disabled = false;
+    }
+    if (btnRescan) {
+      btnRescan.textContent = '🔄 Rescan Current Post';
+      btnRescan.disabled = false;
+    }
+  }
+
+  document.getElementById('btnScanActive').addEventListener('click', () => triggerActiveScan(false));
+  document.getElementById('btnRescan').addEventListener('click', () => triggerActiveScan(true));
+  document.getElementById('btnRetryScan').addEventListener('click', () => triggerActiveScan(true));
 
   async function checkBackendHealth(apiUrl) {
     const statusPill = document.getElementById('apiStatus');

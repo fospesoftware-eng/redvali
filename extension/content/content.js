@@ -31,6 +31,14 @@
       const postEl = getTargetPostElement();
       const postInfo = extractPostData(postEl);
 
+      if (request.forceRefresh) {
+        reportsByUrl.delete(window.location.pathname);
+        if (postInfo.permalink) reportsByUrl.delete(postInfo.permalink);
+        const existingDrawer = postEl.querySelector(`.rv-drawer-container`);
+        if (existingDrawer) existingDrawer.remove();
+        activeDrawers.delete(postInfo.id);
+      }
+
       if (postInfo && postInfo.title) {
         let badgeBtn = postEl.querySelector('.rv-badge-btn') || postEl.querySelector('.rv-score-pill');
         if (!badgeBtn) {
@@ -45,7 +53,7 @@
 
         triggerValidation(postEl, postInfo, badgeBtn, (report) => {
           sendResponse({ status: 'success', data: report });
-        });
+        }, request.forceRefresh);
         return true; // Keep async response channel open
       } else {
         sendResponse({ status: 'error', message: 'Could not extract Reddit post title or content.' });
@@ -195,8 +203,8 @@
     };
   }
 
-  function triggerValidation(postEl, postInfo, badgeBtn, callback) {
-    if (activeDrawers.has(postInfo.id)) {
+  function triggerValidation(postEl, postInfo, badgeBtn, callback, forceRefresh = false) {
+    if (!forceRefresh && activeDrawers.has(postInfo.id)) {
       toggleDrawer(postInfo.id);
       const existingReport = reportsByUrl.get(window.location.pathname);
       if (callback && existingReport) callback(existingReport);
@@ -204,9 +212,10 @@
     }
 
     badgeBtn.classList.add('loading');
+    const iconUrl = chrome.runtime.getURL('icons/icon16.png');
     badgeBtn.innerHTML = `<span class="rv-spinner"></span> <span>Analyzing...</span>`;
 
-    chrome.runtime.sendMessage({ action: 'VALIDATE_POST', payload: postInfo }, (response) => {
+    chrome.runtime.sendMessage({ action: 'VALIDATE_POST', payload: postInfo, forceRefresh }, (response) => {
       badgeBtn.classList.remove('loading');
 
       if (!response || response.status === 'error') {
