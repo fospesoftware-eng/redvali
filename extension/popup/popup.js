@@ -165,6 +165,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       // Query content script for current post data
       chrome.tabs.sendMessage(tabs[0].id, { action: 'GET_ACTIVE_POST_REPORT' }, (response) => {
         if (chrome.runtime.lastError || !response) {
+          // Content script not ready, attempt auto-scan trigger
+          triggerActiveScan(false);
           return;
         }
 
@@ -173,12 +175,11 @@ document.addEventListener('DOMContentLoaded', async () => {
           document.getElementById('detectedPostSub').textContent = `by u/${response.currentPostData.author || 'user'}`;
         }
 
-        if (response.report) {
+        if (response.report && response.currentPostData && (response.report.title === response.currentPostData.title || response.report.title?.includes(response.currentPostData.title?.substring(0, 15)))) {
           renderReportView(response.report);
         } else {
-          document.getElementById('noPostView').classList.remove('hidden');
-          document.getElementById('postReportView').classList.add('hidden');
-          document.getElementById('errorView').classList.add('hidden');
+          // Automatic sync: Trigger scan for active post on screen
+          triggerActiveScan(false);
         }
       });
     });

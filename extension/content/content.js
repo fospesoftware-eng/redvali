@@ -15,9 +15,19 @@
     }
     if (request.action === 'GET_ACTIVE_POST_REPORT') {
       const currentPath = window.location.pathname;
-      const report = reportsByUrl.get(currentPath) || null;
+      let report = reportsByUrl.get(currentPath) || null;
       const postEl = getTargetPostElement();
       const postData = extractPostData(postEl);
+
+      // Strict check: Discard cached report if title does not match current post on screen
+      if (report && postData && postData.title) {
+        const reportTitleClean = (report.title || '').trim().toLowerCase();
+        const postTitleClean = (postData.title || '').trim().toLowerCase();
+        if (reportTitleClean !== postTitleClean && !reportTitleClean.includes(postTitleClean.substring(0, 15)) && !postTitleClean.includes(reportTitleClean.substring(0, 15))) {
+          console.log('[RedValley Content Script] Discarding mismatched report cache:', report.title, 'vs page title:', postData.title);
+          report = null;
+        }
+      }
 
       sendResponse({ 
         report, 
