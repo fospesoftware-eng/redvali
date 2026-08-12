@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="assets/logo.png" alt="Red Valley Logo" width="120">
+</p>
+
 # 🛡️ Red Valley
 
 **Red Valley** is a full-stack Chrome Extension (Manifest V3) and multi-vector Backend Analysis API designed to evaluate the authenticity, claim verifiability, AI content probability, source credibility, and author trust signals of posts on Reddit.
