@@ -248,6 +248,19 @@ html, body {
   height: 110px;
 }
 
+@keyframes rv-ring-spin {
+  0% { transform: rotate(-90deg); }
+  100% { transform: rotate(270deg); }
+}
+
+.score-circle-container.loading .ring-progress {
+  stroke-dasharray: 70 190 !important;
+  stroke-dashoffset: 0 !important;
+  animation: rv-ring-spin 0.9s linear infinite;
+  transform-origin: center;
+  stroke: #6366f1 !important;
+}
+
 .score-ring {
   width: 100%;
   height: 100%;

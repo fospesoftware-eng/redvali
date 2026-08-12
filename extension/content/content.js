@@ -10,9 +10,12 @@
   chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.action === 'CLEAR_CACHE') {
       reportsByUrl.clear();
+      activeDrawers.clear();
+      document.querySelectorAll('.rv-drawer-container').forEach(el => el.remove());
       sendResponse({ status: 'success' });
       return false;
     }
+
     if (request.action === 'GET_ACTIVE_POST_REPORT') {
       const currentPath = window.location.pathname;
       let report = reportsByUrl.get(currentPath) || null;
@@ -37,16 +40,15 @@
       });
       return false;
     }
+
     if (request.action === 'TRIGGER_ACTIVE_POST_SCAN') {
       const postEl = getTargetPostElement();
       const postInfo = extractPostData(postEl);
 
       if (request.forceRefresh) {
-        reportsByUrl.delete(window.location.pathname);
-        if (postInfo.permalink) reportsByUrl.delete(postInfo.permalink);
-        const existingDrawer = postEl.querySelector(`.rv-drawer-container`);
-        if (existingDrawer) existingDrawer.remove();
-        activeDrawers.delete(postInfo.id);
+        reportsByUrl.clear();
+        activeDrawers.clear();
+        document.querySelectorAll('.rv-drawer-container').forEach(el => el.remove());
       }
 
       if (postInfo && postInfo.title) {
@@ -94,13 +96,21 @@
     return document.querySelector('sh-reddit-post, main, article, div[data-testid="post-container"], div.Post, div.thing.link') || document.body;
   }
 
-  // Detect SPA URL changes
+  // Detect SPA URL changes and clear state for new page
   setInterval(() => {
     if (window.location.href !== currentUrl) {
       currentUrl = window.location.href;
+      reportsByUrl.clear();
+      activeDrawers.clear();
+      document.querySelectorAll('.rv-drawer-container').forEach(el => el.remove());
+      document.querySelectorAll('.rv-score-pill').forEach(el => {
+        el.className = 'rv-badge-btn';
+        const iconUrl = chrome.runtime.getURL('icons/icon16.png');
+        el.innerHTML = `<img src="${iconUrl}" style="width:14px; height:14px; border-radius:2px;"> <span>Verify</span>`;
+      });
       scanPosts();
     }
-  }, 1000);
+  }, 500);
 
   // Initialize scanner
   initPostScanner();
@@ -132,7 +142,6 @@
     const postInfo = extractPostData(postEl);
     if (!postInfo || !postInfo.title) return;
 
-    // Avoid injecting if already present
     if (postEl.querySelector('.rv-badge-btn') || postEl.querySelector('.rv-score-pill')) return;
 
     const iconUrl = chrome.runtime.getURL('icons/icon16.png');
@@ -164,13 +173,11 @@
   function extractPostData(postEl) {
     let id = postEl.getAttribute('id') || postEl.getAttribute('data-fullname') || postEl.getAttribute('data-post-id') || postEl.getAttribute('post-id');
     
-    // Extract ID from URL comments path if available (e.g. /comments/1virlnf/...)
     const pathMatch = window.location.pathname.match(/\/comments\/([a-z0-9]+)/i);
     if (pathMatch && pathMatch[1]) {
       id = `t3_${pathMatch[1]}`;
     }
 
-    // Priority H1 Title Extraction for active post page
     let title = '';
     const h1 = document.querySelector('h1');
     if (h1) {
@@ -186,10 +193,8 @@
       title = document.title.replace(/\s*:\s*r\/\w+.*$/, '').replace(/ - Reddit.*$/, '').trim();
     }
 
-    // Clean title from any stray button strings
     title = title.replace(/\s*Verify\s*$/i, '').replace(/\s*Analyzing\.\.\.\s*$/i, '').trim();
 
-    // Body Extraction
     let body = '';
     const bodyEl = postEl.querySelector('[slot="text-body"]') ||
                    postEl.querySelector('sh-reddit-post-body') ||
@@ -200,7 +205,6 @@
                    document.querySelector('[slot="text-body"]');
     if (bodyEl) body = bodyEl.innerText.trim();
 
-    // Author Extraction
     let author = postEl.getAttribute('author') || '[unknown]';
     if (author === '[unknown]') {
       const authorEl = postEl.querySelector('a[href*="/user/"]') ||
@@ -211,11 +215,9 @@
       }
     }
 
-    // Links Extraction
     const linkEls = (postEl.querySelectorAll ? postEl : document).querySelectorAll('a[href^="http"]:not([href*="reddit.com"])');
     const links = Array.from(linkEls).map(a => a.href).slice(0, 10);
 
-    // Media Extraction
     const mediaEls = (postEl.querySelectorAll ? postEl : document).querySelectorAll('img[src*="redd.it"], img[src*="imgur"], a[href*=".jpg"], a[href*=".png"]');
     const mediaUrls = Array.from(mediaEls).map(el => el.src || el.href).slice(0, 5);
 
@@ -242,8 +244,7 @@
       return;
     }
 
-    badgeBtn.classList.add('loading');
-    const iconUrl = chrome.runtime.getURL('icons/icon16.png');
+    badgeBtn.className = 'rv-badge-btn loading';
     badgeBtn.innerHTML = `<span class="rv-spinner"></span> <span>Analyzing...</span>`;
 
     chrome.runtime.sendMessage({ action: 'VALIDATE_POST', payload: postInfo, forceRefresh }, (response) => {

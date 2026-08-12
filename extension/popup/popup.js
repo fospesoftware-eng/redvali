@@ -56,15 +56,34 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   function showErrorView(message) {
+    stopGaugeLoading();
     document.getElementById('noPostView').classList.add('hidden');
     document.getElementById('postReportView').classList.add('hidden');
     document.getElementById('errorView').classList.remove('hidden');
     document.getElementById('errorMsgText').textContent = message || 'Validation request failed.';
   }
 
+  function startGaugeLoading() {
+    const container = document.querySelector('.score-circle-container');
+    if (container) container.classList.add('loading');
+    const badge = document.getElementById('reportRatingBadge');
+    if (badge) {
+      badge.textContent = '⏳ ANALYZING POST...';
+      badge.style.background = '#6366f1';
+      badge.style.color = '#fff';
+    }
+  }
+
+  function stopGaugeLoading() {
+    const container = document.querySelector('.score-circle-container');
+    if (container) container.classList.remove('loading');
+  }
+
   const triggerActiveScan = (forceRefresh = false) => {
     const btnScan = document.getElementById('btnScanActive');
     const btnRescan = document.getElementById('btnRescan');
+
+    startGaugeLoading();
 
     if (forceRefresh) {
       if (btnRescan) {
@@ -84,6 +103,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       const activeTab = tabs[0];
       if (!activeTab || !activeTab.id || !activeTab.url?.includes('reddit.com')) {
         showToast('⚠️ Please open a post on reddit.com first.');
+        stopGaugeLoading();
         resetButtons();
         return;
       }
@@ -165,7 +185,6 @@ document.addEventListener('DOMContentLoaded', async () => {
       // Query content script for current post data
       chrome.tabs.sendMessage(tabs[0].id, { action: 'GET_ACTIVE_POST_REPORT' }, (response) => {
         if (chrome.runtime.lastError || !response) {
-          // Content script not ready, attempt auto-scan trigger
           triggerActiveScan(false);
           return;
         }
@@ -186,6 +205,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   function renderReportView(report) {
+    stopGaugeLoading();
     document.getElementById('noPostView').classList.add('hidden');
     document.getElementById('errorView').classList.add('hidden');
     document.getElementById('postReportView').classList.remove('hidden');
