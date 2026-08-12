@@ -3,6 +3,7 @@
 
   // Store reports by permalink URL path
   const reportsByUrl = new Map();
+  const activeDrawers = new Map();
   let currentUrl = window.location.href;
 
   // Listen to messages from Popup
@@ -15,7 +16,7 @@
     if (request.action === 'GET_ACTIVE_POST_REPORT') {
       const currentPath = window.location.pathname;
       const report = reportsByUrl.get(currentPath) || null;
-      const postEl = document.querySelector('sh-reddit-post, main, article, div[data-testid="post-container"], div.Post, div.thing.link') || document.body;
+      const postEl = getTargetPostElement();
       const postData = extractPostData(postEl);
 
       sendResponse({ 
@@ -27,7 +28,7 @@
       return false;
     }
     if (request.action === 'TRIGGER_ACTIVE_POST_SCAN') {
-      const postEl = document.querySelector('sh-reddit-post, main, article, div[data-testid="post-container"], div.Post, div.thing.link') || document.body;
+      const postEl = getTargetPostElement();
       const postInfo = extractPostData(postEl);
 
       if (postInfo && postInfo.title) {
@@ -35,20 +36,27 @@
         if (!badgeBtn) {
           badgeBtn = document.createElement('button');
           badgeBtn.className = 'rv-badge-btn';
-          badgeBtn.innerHTML = `<span>🛡️ Verify</span>`;
-          (postEl.querySelector('h1') || postEl.querySelector('h3') || postEl).appendChild(badgeBtn);
+          const iconUrl = chrome.runtime.getURL('icons/icon16.png');
+          badgeBtn.innerHTML = `<img src="${iconUrl}" style="width:14px; height:14px; border-radius:2px;"> <span>Verify</span>`;
+          
+          const titleEl = postEl.querySelector('h1[slot="title"]') || postEl.querySelector('h1') || postEl.querySelector('h3') || postEl;
+          titleEl.parentNode.insertBefore(badgeBtn, titleEl.nextSibling);
         }
 
         triggerValidation(postEl, postInfo, badgeBtn, (report) => {
           sendResponse({ status: 'success', data: report });
         });
-        return true; // Keep response channel open for async validation
+        return true; // Keep async response channel open
       } else {
-        sendResponse({ status: 'error', message: 'Could not extract post content from page.' });
+        sendResponse({ status: 'error', message: 'Could not extract Reddit post title or content.' });
         return false;
       }
     }
   });
+
+  function getTargetPostElement() {
+    return document.querySelector('sh-reddit-post, main, article, div[data-testid="post-container"], div.Post, div.thing.link') || document.body;
+  }
 
   // Detect SPA URL changes
   setInterval(() => {
@@ -58,21 +66,18 @@
     }
   }, 1000);
 
-  // Initialize observer to process dynamically loaded posts (infinite scroll)
+  // Initialize scanner
   initPostScanner();
 
   function initPostScanner() {
     scanPosts();
-    // Observe DOM changes for new Reddit infinite scrolling
     const observer = new MutationObserver(() => {
       scanPosts();
     });
-
     observer.observe(document.body, { childList: true, subtree: true });
   }
 
   function scanPosts() {
-    // Reddit DOM Selectors (Supports sh-reddit web components, new Reddit post containers, old Reddit link rows)
     const postElements = document.querySelectorAll(`
       sh-reddit-post,
       div[data-testid="post-container"],
@@ -83,7 +88,6 @@
     postElements.forEach(postEl => {
       if (postEl.dataset.rvInjected) return;
       postEl.dataset.rvInjected = "true";
-
       injectValidationBadge(postEl);
     });
   }
@@ -92,20 +96,15 @@
     const postInfo = extractPostData(postEl);
     if (!postInfo || !postInfo.title) return;
 
-    // Locate header action bar to place badge
-    const headerContainer = 
-      postEl.querySelector('[slot="credit-bar"]') ||
-      postEl.querySelector('.post-metadata') ||
-      postEl.querySelector('div[data-testid="post-top-meta"]') ||
-      postEl.querySelector('p.title') ||
-      postEl.querySelector('.entry') ||
-      postEl;
+    // Avoid injecting if already present
+    if (postEl.querySelector('.rv-badge-btn') || postEl.querySelector('.rv-score-pill')) return;
 
+    const iconUrl = chrome.runtime.getURL('icons/icon16.png');
     const badgeBtn = document.createElement('button');
     badgeBtn.className = 'rv-badge-btn';
     badgeBtn.setAttribute('type', 'button');
-    badgeBtn.innerHTML = `<span>🛡️ Verify</span>`;
-    badgeBtn.title = 'Click to analyze post claims & AI authenticity';
+    badgeBtn.innerHTML = `<img src="${iconUrl}" style="width:14px; height:14px; border-radius:2px;"> <span>Verify</span>`;
+    badgeBtn.title = 'Red Valley - Click to analyze post claims & AI authenticity';
 
     badgeBtn.addEventListener('click', (e) => {
       e.stopPropagation();
@@ -113,13 +112,23 @@
       triggerValidation(postEl, postInfo, badgeBtn);
     });
 
-    headerContainer.appendChild(badgeBtn);
+    const targetNode = postEl.querySelector('[slot="credit-bar"]') ||
+                       postEl.querySelector('.post-metadata') ||
+                       postEl.querySelector('div[data-testid="post-top-meta"]') ||
+                       postEl.querySelector('p.title') ||
+                       postEl.querySelector('h1') ||
+                       postEl.querySelector('.entry') ||
+                       postEl;
+
+    if (targetNode) {
+      targetNode.appendChild(badgeBtn);
+    }
   }
 
   function extractPostData(postEl) {
     let id = postEl.getAttribute('id') || postEl.getAttribute('data-fullname') || postEl.getAttribute('data-post-id') || postEl.getAttribute('post-id');
     
-    // Title Extraction
+    // Clean Title Extraction without button text pollution
     let title = postEl.getAttribute('post-title') || '';
     if (!title) {
       const titleEl = postEl.querySelector('h1[slot="title"]') ||
@@ -128,11 +137,18 @@
                       postEl.querySelector('a.title') ||
                       postEl.querySelector('[data-click-id="body"] h2') ||
                       document.querySelector('h1');
-      if (titleEl) title = titleEl.innerText.trim();
+      if (titleEl) {
+        const clone = titleEl.cloneNode(true);
+        clone.querySelectorAll('.rv-badge-btn, .rv-score-pill').forEach(el => el.remove());
+        title = clone.innerText.trim();
+      }
     }
     if (!title && document.title) {
       title = document.title.replace(/\s*:\s*r\/\w+.*$/, '').replace(/ - Reddit.*$/, '').trim();
     }
+
+    // Clean title from any stray button strings
+    title = title.replace(/\s*Verify\s*$/i, '').replace(/\s*Analyzing\.\.\.\s*$/i, '').trim();
 
     // Body Extraction
     let body = '';
@@ -182,7 +198,8 @@
   function triggerValidation(postEl, postInfo, badgeBtn, callback) {
     if (activeDrawers.has(postInfo.id)) {
       toggleDrawer(postInfo.id);
-      if (callback && latestAnalyzedReport) callback(latestAnalyzedReport);
+      const existingReport = reportsByUrl.get(window.location.pathname);
+      if (callback && existingReport) callback(existingReport);
       return;
     }
 
@@ -193,8 +210,9 @@
       badgeBtn.classList.remove('loading');
 
       if (!response || response.status === 'error') {
-        badgeBtn.innerHTML = `<span>⚠️ Error</span>`;
-        console.error('[RedValley] Error:', response ? response.message : 'No response');
+        badgeBtn.innerHTML = `<span>⚠️ API Offline</span>`;
+        console.error('[RedValley] Error:', response ? response.message : 'No response from background script');
+        if (callback) callback({ status: 'error', message: response ? response.message : 'API offline' });
         return;
       }
 
@@ -215,18 +233,20 @@
     else if (report.overallScore <= 40) trustClass = 'trust-critical';
     else if (report.overallScore < 60) trustClass = 'trust-suspicious';
 
+    const iconUrl = chrome.runtime.getURL('icons/icon16.png');
     badgeBtn.className = `rv-score-pill ${trustClass}`;
-    badgeBtn.innerHTML = `<span>🛡️ ${report.overallScore}%</span> <span>${report.trustRating}</span>`;
+    badgeBtn.innerHTML = `<img src="${iconUrl}" style="width:14px; height:14px; border-radius:2px;"> <span>${report.overallScore}%</span> <span>${report.trustRating}</span>`;
   }
 
   function renderEvidenceDrawer(postEl, postId, report) {
-    // Remove existing if present
     const existing = postEl.querySelector(`.rv-drawer-container[data-post-id="${postId}"]`);
     if (existing) existing.remove();
 
     const drawer = document.createElement('div');
     drawer.className = 'rv-drawer-container';
     drawer.dataset.postId = postId;
+
+    const logoUrl = chrome.runtime.getURL('icons/icon48.png');
 
     const keyFlagsHTML = report.keyFlags.map(flag => `
       <div class="rv-flag-item ${flag.type}">
@@ -249,13 +269,32 @@
       </div>
     `).join('') || '<div style="font-size:12px; color:#9ca3af;">No external citation links in post.</div>';
 
+    const engScore = report.primaryScores?.communityEngagement?.score || report.overallScore;
+    const leadScore = report.primaryScores?.leadTruthfulness?.score || report.overallScore;
+
     drawer.innerHTML = `
       <div class="rv-drawer-header">
         <div class="rv-drawer-title">
-          <span>🛡️ Authenticity Evidence Report</span>
+          <img src="${logoUrl}" style="width:20px; height:20px; border-radius:4px;">
+          <span>Red Valley Authenticity Evidence Report</span>
           <span class="rv-score-badge-lg" style="background:${report.badgeColor}; color:#fff;">${report.overallScore}/100</span>
         </div>
         <button type="button" class="rv-drawer-close" title="Close Drawer">&times;</button>
+      </div>
+
+      <!-- DUAL SCORE HIGHLIGHT CARDS IN DRAWER -->
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:14px;">
+        <div style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); padding:10px; border-radius:8px; text-align:center;">
+          <div style="font-size:10px; color:#9ca3af; text-transform:uppercase; font-weight:700;">💬 Community Engagement</div>
+          <div style="font-size:20px; font-weight:800; color:${getScoreColor(engScore)}; margin:2px 0;">${engScore}%</div>
+          <div style="font-size:9px; background:rgba(255,255,255,0.08); color:#a5b4fc; padding:2px 6px; border-radius:4px; display:inline-block;">${report.primaryScores?.communityEngagement?.rating || 'ORGANIC'}</div>
+        </div>
+
+        <div style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); padding:10px; border-radius:8px; text-align:center;">
+          <div style="font-size:10px; color:#9ca3af; text-transform:uppercase; font-weight:700;">🎯 Lead & Factual Truth</div>
+          <div style="font-size:20px; font-weight:800; color:${getScoreColor(leadScore)}; margin:2px 0;">${leadScore}%</div>
+          <div style="font-size:9px; background:rgba(255,255,255,0.08); color:#a5b4fc; padding:2px 6px; border-radius:4px; display:inline-block;">${report.primaryScores?.leadTruthfulness?.rating || 'GENUINE'}</div>
+        </div>
       </div>
 
       ${keyFlagsHTML ? `<div class="rv-flags-grid">${keyFlagsHTML}</div>` : ''}

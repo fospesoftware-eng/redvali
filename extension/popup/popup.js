@@ -42,7 +42,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       });
 
       showToast('✅ Validation cache cleared successfully.');
-      setTimeout(() => location.reload(), 1000);
+      setTimeout(() => location.reload(), 800);
     });
   });
 
@@ -55,10 +55,19 @@ document.addEventListener('DOMContentLoaded', async () => {
     }, 2500);
   }
 
+  function showErrorView(message) {
+    document.getElementById('noPostView').classList.add('hidden');
+    document.getElementById('postReportView').classList.add('hidden');
+    document.getElementById('errorView').classList.remove('hidden');
+    document.getElementById('errorMsgText').textContent = message || 'Validation request failed.';
+  }
+
   const triggerActiveScan = () => {
     const btn = document.getElementById('btnScanActive');
     btn.textContent = '⏳ Analyzing Post...';
     btn.disabled = true;
+
+    document.getElementById('errorView').classList.add('hidden');
 
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
       const activeTab = tabs[0];
@@ -85,15 +94,19 @@ document.addEventListener('DOMContentLoaded', async () => {
             }, () => {
               setTimeout(() => {
                 chrome.tabs.sendMessage(activeTab.id, { action: 'TRIGGER_ACTIVE_POST_SCAN' }, (res2) => {
-                  if (res2 && res2.data) {
+                  if (res2 && res2.status === 'success' && res2.data) {
                     renderReportView(res2.data);
+                  } else {
+                    showErrorView(res2 ? res2.message : 'Extension script execution error.');
                   }
                 });
               }, 300);
             });
           });
-        } else if (res && res.data) {
+        } else if (res && res.status === 'success' && res.data) {
           renderReportView(res.data);
+        } else {
+          showErrorView(res ? res.message : 'Validation request failed.');
         }
       });
     });
@@ -101,6 +114,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   document.getElementById('btnScanActive').addEventListener('click', triggerActiveScan);
   document.getElementById('btnRescan').addEventListener('click', triggerActiveScan);
+  document.getElementById('btnRetryScan').addEventListener('click', triggerActiveScan);
 
   async function checkBackendHealth(apiUrl) {
     const statusPill = document.getElementById('apiStatus');
@@ -142,6 +156,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         } else {
           document.getElementById('noPostView').classList.remove('hidden');
           document.getElementById('postReportView').classList.add('hidden');
+          document.getElementById('errorView').classList.add('hidden');
         }
       });
     });
@@ -149,6 +164,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   function renderReportView(report) {
     document.getElementById('noPostView').classList.add('hidden');
+    document.getElementById('errorView').classList.add('hidden');
     document.getElementById('postReportView').classList.remove('hidden');
 
     document.getElementById('reportTitle').textContent = report.title || 'Reddit Post';
