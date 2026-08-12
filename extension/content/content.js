@@ -73,6 +73,24 @@
   });
 
   function getTargetPostElement() {
+    // Priority 1: Container of h1 (the main post title displayed on screen)
+    const h1 = document.querySelector('h1');
+    if (h1) {
+      const mainContainer = h1.closest('sh-reddit-post, main, article, div[data-testid="post-container"], div.Post, div.thing.link');
+      if (mainContainer) return mainContainer;
+    }
+
+    // Priority 2: sh-reddit-post matching current comment URL path
+    const currentPath = window.location.pathname;
+    if (currentPath.includes('/comments/')) {
+      const matchSh = Array.from(document.querySelectorAll('sh-reddit-post')).find(el => {
+        const perm = el.getAttribute('permalink') || '';
+        return perm && currentPath.includes(perm);
+      });
+      if (matchSh) return matchSh;
+    }
+
+    // Fallback
     return document.querySelector('sh-reddit-post, main, article, div[data-testid="post-container"], div.Post, div.thing.link') || document.body;
   }
 
@@ -146,20 +164,23 @@
   function extractPostData(postEl) {
     let id = postEl.getAttribute('id') || postEl.getAttribute('data-fullname') || postEl.getAttribute('data-post-id') || postEl.getAttribute('post-id');
     
-    // Clean Title Extraction without button text pollution
-    let title = postEl.getAttribute('post-title') || '';
+    // Extract ID from URL comments path if available (e.g. /comments/1virlnf/...)
+    const pathMatch = window.location.pathname.match(/\/comments\/([a-z0-9]+)/i);
+    if (pathMatch && pathMatch[1]) {
+      id = `t3_${pathMatch[1]}`;
+    }
+
+    // Priority H1 Title Extraction for active post page
+    let title = '';
+    const h1 = document.querySelector('h1');
+    if (h1) {
+      const clone = h1.cloneNode(true);
+      clone.querySelectorAll('.rv-badge-btn, .rv-score-pill').forEach(el => el.remove());
+      title = clone.innerText.trim();
+    }
+
     if (!title) {
-      const titleEl = postEl.querySelector('h1[slot="title"]') ||
-                      postEl.querySelector('h1') ||
-                      postEl.querySelector('h3') ||
-                      postEl.querySelector('a.title') ||
-                      postEl.querySelector('[data-click-id="body"] h2') ||
-                      document.querySelector('h1');
-      if (titleEl) {
-        const clone = titleEl.cloneNode(true);
-        clone.querySelectorAll('.rv-badge-btn, .rv-score-pill').forEach(el => el.remove());
-        title = clone.innerText.trim();
-      }
+      title = postEl.getAttribute('post-title') || '';
     }
     if (!title && document.title) {
       title = document.title.replace(/\s*:\s*r\/\w+.*$/, '').replace(/ - Reddit.*$/, '').trim();
@@ -176,15 +197,15 @@
                    postEl.querySelector('div[data-click-id="text"]') ||
                    postEl.querySelector('.usertext-body') ||
                    postEl.querySelector('article') ||
-                   postEl.querySelector('p');
+                   document.querySelector('[slot="text-body"]');
     if (bodyEl) body = bodyEl.innerText.trim();
 
     // Author Extraction
     let author = postEl.getAttribute('author') || '[unknown]';
     if (author === '[unknown]') {
       const authorEl = postEl.querySelector('a[href*="/user/"]') ||
-                       postEl.querySelector('[slot="author-name"]') ||
-                       postEl.querySelector('.author');
+                       document.querySelector('a[href*="/user/"]') ||
+                       postEl.querySelector('[slot="author-name"]');
       if (authorEl) {
         author = authorEl.innerText.replace(/^u\//, '').trim();
       }
