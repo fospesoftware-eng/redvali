@@ -1,7 +1,7 @@
 ---
 name: red-valley-skill
-description: Authoritative multi-vector scoring skill for evaluating Reddit community post engagement authenticity, factual lead truthfulness, synthetic AI content probability, and source credibility.
-version: 2.0.0
+description: Production-grade multi-vector scoring skill for evaluating Reddit community post engagement authenticity, trading scams, financial profit brags, synthetic AI content, and source credibility.
+version: 3.0.0
 ---
 
 # 🛡️ Red Valley Authoritative Multi-Vector Verification Skill
@@ -19,10 +19,26 @@ This skill defines the production-ready multi-vector evaluation engine used by *
 │       versus a covert self-promotion plug, DM lead trap, or upvote bait.   │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │ 🎯 2. FACTUAL & LEAD TRUTHFULNESS SCORE (0-100%)                            │
-│       Measures whether financial figures (MRR/ARR), achievement claims,      │
+│       Measures whether financial figures (MRR/ARR), trading profits ($33k+),│
 │       growth advice, and external links are authentic vs false leads.       │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
+
+---
+
+## 🚨 Critical Red-Flag Verification Rules
+
+### 1. Trading Scams & Unverified Profit Brags
+- **Patterns**: `$33,000+ Trading`, `$10k in 10 mins`, `exact system:`, `daily profit`, `win rate`, `automated trading bot`, `signals`.
+- **Evaluation Rule**: Posts claiming rapid financial profits or "less than 10 minutes a day" without third-party audited proof (Stripe, Open Startup, Verified Broker) are **penalized by -55 to -70 points**.
+- **Resulting Ratings**:
+  - `💬 25% HIGH SPAM / COVERT FUNNEL`
+  - `🎯 20% FALSE LEADS / MISLEADING`
+  - `Overall Score: < 30 / 100` (`🚨 HIGH RISK / MISLEADING` - Red Badge `#ef4444`)
+
+### 2. AI-Generated Trading & Marketing Scripts
+- **Patterns**: Section headers like `Strategy`, `Risk Management`, `Daily net cumulative P&L`, `The System:`, `Setup:`.
+- **Evaluation Rule**: Posts combining financial earnings assertions with ChatGPT structured section headers are flagged as **Synthetic Marketing Copy** (AI Index: **15 - 25 / 100**).
 
 ---
 
@@ -48,34 +64,26 @@ This skill defines the production-ready multi-vector evaluation engine used by *
 
 ---
 
-## 🔍 Specific Post Category Heuristics
+## 🔍 Specific Post Category Benchmark Examples
 
-### 1. Question / Help Seeking Posts
-- **Title Examples**: *"I need some ideas on how to get to some money ASAP"*, *"How do I find early adopters?"*
+### 1. Trading Scam / Profit Brag Post (CRITICAL RISK)
+- **Title**: *"I Made Over $33,000+ Trading Less Than 10 Minutes a Day Heres the Exact System:"*
+- **Vector Profile**:
+  - 📌 Claim Assertions: **25/100** (Unverified high earnings brag)
+  - 🤖 AI Text Index: **25/100** (Structured ChatGPT marketing template)
+  - 🔗 Source Credibility: **40/100** (Hidden course funnel)
+  - 👤 Account Signals: **55/100** (Unverified trader profile)
+  - **Result**: `💬 25% HIGH SPAM / COVERT FUNNEL` | `🎯 20% FALSE LEADS / MISLEADING`
+  - **Overall Authenticity Index**: **28 / 100** (`🚨 HIGH RISK / MISLEADING`)
+
+### 2. Genuine Help Seeking Post (HIGH TRUST)
+- **Title**: *"I need some ideas on how to get to some money ASAP"*
 - **Vector Profile**:
   - 📌 Claim Assertions: **85/100** (Zero false claims, seeking input)
-  - 🤖 AI Text Index: **95/100** (Expressive human phrasing with `ASAP`, `!!!`)
+  - 🤖 AI Text Index: **95/100** (Expressive human phrasing)
   - 🔗 Source Credibility: **80/100** (Clean internal discussion)
-  - 👤 Account Signals: **85/100** (Organic handle `Real_dranksipper`)
+  - 👤 Account Signals: **85/100** (Organic handle)
   - **Result**: `💬 88% ORGANIC` | `🎯 84% GENUINE`
-
-### 2. Milestone / Personal Experience Posts
-- **Title Examples**: *"After 36 technical interviews, I finally bagged an offer"*, *"Built my first app"*
-- **Vector Profile**:
-  - 📌 Claim Assertions: **75/100** (Personal milestone assertion)
-  - 🤖 AI Text Index: **92/100** (Natural human experience narrative)
-  - 🔗 Source Credibility: **75/100** (Image attachment proof)
-  - 👤 Account Signals: **85/100** (Established handle `deathmachine1407`)
-  - **Result**: `💬 84% ORGANIC` | `🎯 78% GENUINE`
-
-### 3. Covert Product Plug / Lead Traps
-- **Title Examples**: *"Funding 5 builders with $500 in AI credits + our time to launch a micro SaaS"*
-- **Vector Profile**:
-  - 📌 Claim Assertions: **50/100** (Unverified credit giveaway / lead magnet)
-  - 🤖 AI Text Index: **65/100** (Marketing copy phrasing)
-  - 🔗 Source Credibility: **45/100** (Gated signup / DM lead capture)
-  - 👤 Account Signals: **75/100** (Self-promo account profile)
-  - **Result**: `💬 52% COVERT PLUG` | `🎯 48% UNVERIFIED LEAD`
 
 ---
 
@@ -83,6 +91,6 @@ This skill defines the production-ready multi-vector evaluation engine used by *
 
 ```json
 {
-  "system_prompt": "You are the Red Valley Authenticity Validator. Evaluate the Reddit post across Community Engagement (0-100) and Lead Truthfulness (0-100). Calculate AI Synthetic Probability (0.0-1.0), Source Domain Credibility (0-100), and Account Risk. Return JSON formatted output with primaryScores, vectorBreakdown, and keyFlags."
+  "system_prompt": "You are the Red Valley Authenticity Validator. Evaluate the Reddit post across Community Engagement (0-100) and Lead Truthfulness (0-100). Identify trading scams, get-rich-quick claims, and synthetic AI marketing scripts. Return JSON formatted output with primaryScores, vectorBreakdown, and keyFlags."
 }
 ```

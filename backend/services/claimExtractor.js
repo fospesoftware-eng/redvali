@@ -49,11 +49,11 @@ Return JSON with format:
       .filter(s => s.length > 12);
 
     const claims = [];
-    let verifiabilitySum = 50;
 
-    const statRegex = /\b(\d+(?:\.\d+)?%|\$\d+|\d+\s*(?:million|billion|trillion|people|cases|deaths|dollars))\b/i;
-    const absoluteRegex = /\b(always|never|every|none|proven|100%|secret|conspiracy|breakthrough|cure|miracle|guaranteed)\b/i;
+    const statRegex = /\b(\$\d+[\d,]*\+?|\d+(?:\.\d+)?%|\$\d+|\d+\s*(?:million|billion|trillion|people|cases|deaths|dollars|minutes))\b/i;
+    const absoluteRegex = /\b(always|never|every|none|proven|100%|secret|conspiracy|breakthrough|cure|miracle|guaranteed|exact system|less than \d+ minutes)\b/i;
     const sourceCiteRegex = /\b(according to|study|research|journal|report|dr\.|doctor|scientists|official|court|documents)\b/i;
+    const tradingBragRegex = /\b(made over|made|earned|profit|gained)\s*\$?\d+/i;
 
     sentences.forEach((sentence) => {
       let isClaim = false;
@@ -62,11 +62,12 @@ Return JSON with format:
       let suspicionFlag = false;
       let reason = 'General declarative statement';
 
-      if (statRegex.test(sentence)) {
+      if (statRegex.test(sentence) || tradingBragRegex.test(sentence)) {
         isClaim = true;
-        category = 'statistic';
-        verifiability = 'high';
-        reason = 'Contains quantitative metric or numerical data';
+        category = 'financial/statistic';
+        verifiability = 'low';
+        suspicionFlag = true;
+        reason = 'Contains quantitative financial profit or performance assertion';
       } else if (sourceCiteRegex.test(sentence)) {
         isClaim = true;
         category = 'scientific/report';
@@ -101,7 +102,7 @@ Return JSON with format:
     } else {
       const highCount = claims.filter(c => c.verifiability === 'high').length;
       const flaggedCount = claims.filter(c => c.suspicionFlag).length;
-      verifiabilityScore = Math.min(100, Math.max(10, 60 + (highCount * 10) - (flaggedCount * 15)));
+      verifiabilityScore = Math.min(100, Math.max(10, 60 + (highCount * 10) - (flaggedCount * 25)));
     }
 
     return {

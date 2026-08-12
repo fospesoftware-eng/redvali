@@ -3,13 +3,13 @@ const llmService = require('./llmService');
 class AITextDetector {
   async detect(postData) {
     const text = `${postData.title || ''}\n\n${postData.body || ''}`.trim();
-    if (!text || text.length < 30) {
+    if (!text) {
       return {
         aiProbability: 0.1,
         isLikelyAI: false,
         confidence: "low",
-        indicators: ["Text too short for conclusive AI statistical analysis"],
-        aiScore: 90 // High score = Human text / low AI threat
+        indicators: ["No text content available"],
+        aiScore: 90
       };
     }
 
@@ -48,7 +48,7 @@ Return JSON with format:
     const indicators = [];
     let aiProbPoints = 0;
 
-    // AI Buzzword checks
+    // AI Buzzword & Synthetic Structure checks
     const aiBuzzwords = [
       /\bdelve\b/i, /\btapestry\b/i, /\bmoreover\b/i, /\bfurthermore\b/i,
       /\btestament to\b/i, /\bpivotal\b/i, /\bparamount\b/i, /\bin summary\b/i,
@@ -64,11 +64,19 @@ Return JSON with format:
     });
 
     if (buzzwordCount >= 3) {
-      aiProbPoints += 40;
+      aiProbPoints += 45;
       indicators.push(`High frequency of characteristic AI vocabulary (${buzzwordCount} matches found)`);
     } else if (buzzwordCount >= 1) {
-      aiProbPoints += 15;
+      aiProbPoints += 20;
       indicators.push('Contains synthetic transition phrases common in AI outputs');
+    }
+
+    // AI Structured Marketing / Trading Funnel Pattern Check (ChatGPT default headers)
+    const structuredHeaders = /\b(Strategy|Risk Management|Key Takeaways|The System:|Setup:|Daily net cumulative|Rules:|Execution:|Summary:)\b/i;
+    const colonTitle = /^.+:\s*$/m.test(text) || text.includes('Exact System:');
+    if (structuredHeaders.test(text) || colonTitle) {
+      aiProbPoints += 55;
+      indicators.push('Structured section header & colon formatting matching LLM generated marketing post output');
     }
 
     // Sentence length uniformity (low burstiness)
@@ -97,21 +105,21 @@ Return JSON with format:
 
     // Reddit colloquialisms check (Human signals)
     const redditSlang = /\b(tldr|tl;dr|imo|imho|lmao|lol|afaik|fwiw|op|sub|edit:|yall|y'all|tbh|smh)\b/i;
-    if (redditSlang.test(text)) {
+    if (redditSlang.test(text) && !structuredHeaders.test(text)) {
       aiProbPoints -= 25;
       indicators.push('Contains authentic informal social media idioms & Reddit slang');
     }
 
     // Typos / casual punctuation (Human signals)
     const casualPunctuation = /\?\?|\!\!|\.\.\.|:\)|:\(/;
-    if (casualPunctuation.test(text)) {
+    if (casualPunctuation.test(text) && !structuredHeaders.test(text)) {
       aiProbPoints -= 15;
       indicators.push('Contains informal punctuation or expressive emojis/emoticons');
     }
 
     // Normalize probability
     const clampedProb = Math.min(0.95, Math.max(0.05, aiProbPoints / 100));
-    const isLikelyAI = clampedProb >= 0.55;
+    const isLikelyAI = clampedProb >= 0.50;
     const aiScore = Math.round((1 - clampedProb) * 100);
 
     if (indicators.length === 0) {
@@ -121,7 +129,7 @@ Return JSON with format:
     return {
       aiProbability: Number(clampedProb.toFixed(2)),
       isLikelyAI,
-      confidence: sentences.length > 5 ? "medium" : "low",
+      confidence: sentences.length > 3 ? "medium" : "low",
       indicators,
       explanation: isLikelyAI 
         ? "Text exhibits multiple synthetic writing patterns characteristic of AI language models."
