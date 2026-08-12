@@ -18,18 +18,25 @@
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
-body {
-  width: 360px;
-  height: 520px;
+html, body {
+  width: 400px;
+  min-width: 400px;
+  max-width: 400px;
+  height: 550px;
+  min-height: 550px;
+  margin: 0;
+  padding: 0;
   background: var(--bg-dark);
   color: var(--text-main);
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
 }
 
 .popup-container {
+  width: 100%;
+  height: 100%;
   display: flex;
   flex-direction: column;
-  height: 100%;
 }
 
 .app-header {
