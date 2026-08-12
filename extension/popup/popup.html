@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reddit Validator</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="popup-container">
+    <!-- Header -->
+    <header class="app-header">
+      <div class="brand">
+        <span class="shield-icon">🛡️</span>
+        <span class="brand-name">Reddit Validator</span>
+      </div>
+      <div class="status-pill" id="apiStatus">
+        <span class="status-dot"></span>
+        <span id="statusText">Connecting...</span>
+      </div>
+    </header>
+
+    <!-- Toast Notification Banner -->
+    <div id="toastBanner" class="toast-banner hidden"></div>
+
+    <!-- Main View -->
+    <main class="main-content">
+      <div id="noPostView" class="empty-state">
+        <div class="empty-icon">🛡️</div>
+        <h3 id="detectedPostTitle">Active Reddit Post Detected</h3>
+        <p id="detectedPostSub">Click below to analyze authenticity & factual claims for the current post.</p>
+        <button id="btnScanActive" class="btn-primary">⚡ Scan Current Post</button>
+      </div>
+
+      <div id="postReportView" class="report-view hidden">
+        <!-- Post Header -->
+        <div class="post-meta-card">
+          <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:8px;">
+            <div>
+              <div class="post-title" id="reportTitle">Sample Reddit Post Title</div>
+              <div class="post-author" id="reportAuthor">by u/username</div>
+            </div>
+            <button id="btnRescan" class="btn-icon" title="Re-scan current post content" style="background:rgba(255,255,255,0.08); font-size:11px; white-space:nowrap; padding:4px 8px;">🔄 Rescan</button>
+          </div>
+        </div>
+
+        <!-- TWO PRIMARY HIGHLIGHTED DUAL SCORES -->
+        <div class="dual-scores-container">
+          <div class="dual-score-card">
+            <div class="dual-score-header">💬 Community Engagement</div>
+            <div class="dual-score-num" id="scoreEngagementNum">--</div>
+            <div class="dual-score-tag" id="scoreEngagementTag">ORGANIC</div>
+          </div>
+
+          <div class="dual-score-card">
+            <div class="dual-score-header">🎯 Lead & Factual Truth</div>
+            <div class="dual-score-num" id="scoreLeadNum">--</div>
+            <div class="dual-score-tag" id="scoreLeadTag">GENUINE</div>
+          </div>
+        </div>
+
+        <!-- Overall Score Ring Gauge -->
+        <div class="gauge-section">
+          <div class="score-circle-container">
+            <svg class="score-ring" viewBox="0 0 100 100">
+              <circle class="ring-bg" cx="50" cy="50" r="42"></circle>
+              <circle class="ring-progress" id="scoreRingProgress" cx="50" cy="50" r="42"></circle>
+            </svg>
+            <div class="score-display">
+              <span class="score-num" id="reportScore">--</span>
+              <span class="score-label">OVERALL INDEX</span>
+            </div>
+          </div>
+          <div class="rating-badge" id="reportRatingBadge">ANALYZING</div>
+        </div>
+
+        <!-- Key Risk Indicators -->
+        <div class="flags-container" id="reportFlags"></div>
+
+        <!-- Multi-Vector Progress Breakdown -->
+        <div class="vectors-section">
+          <h4 class="section-title">Validation Vectors</h4>
+
+          <div class="vector-row">
+            <div class="vector-header">
+              <span>📌 Factual Claim Assertions</span>
+              <span id="vClaimScore">--</span>
+            </div>
+            <div class="bar-bg"><div class="bar-fill" id="vClaimBar"></div></div>
+          </div>
+
+          <div class="vector-row">
+            <div class="vector-header">
+              <span>🤖 AI Synthetic Text Index</span>
+              <span id="vAiScore">--</span>
+            </div>
+            <div class="bar-bg"><div class="bar-fill" id="vAiBar"></div></div>
+          </div>
+
+          <div class="vector-row">
+            <div class="vector-header">
+              <span>🔗 Link & Source Credibility</span>
+              <span id="vSourceScore">--</span>
+            </div>
+            <div class="bar-bg"><div class="bar-fill" id="vSourceBar"></div></div>
+          </div>
+
+          <div class="vector-row">
+            <div class="vector-header">
+              <span>👤 Author Account Signals</span>
+              <span id="vAccountScore">--</span>
+            </div>
+            <div class="bar-bg"><div class="bar-fill" id="vAccountBar"></div></div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- Footer Controls -->
+    <footer class="app-footer">
+      <button id="btnSettings" class="btn-icon" title="Settings">⚙️ Settings</button>
+      <button id="btnClearCache" class="btn-icon" title="Clear Cache">🗑️ Clear Cache</button>
+    </footer>
+
+    <!-- Settings Modal overlay -->
+    <div id="settingsModal" class="modal hidden">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>Backend Settings</h3>
+          <button id="btnCloseSettings" class="close-btn">&times;</button>
+        </div>
+        <div class="form-group">
+          <label for="inputApiUrl">Backend API Server Endpoint</label>
+          <input type="text" id="inputApiUrl" placeholder="http://localhost:3000">
+        </div>
+        <div class="modal-footer">
+          <button id="btnSaveSettings" class="btn-primary">Save Settings</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
