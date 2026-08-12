@@ -39,19 +39,24 @@ class ScoringEngine {
     const overallScore = Math.round((engagementScore + leadTruthfulnessScore) / 2);
 
     let trustRating = 'MODERATE';
+    let riskLevel = 'medium';
     let badgeColor = '#3b82f6';
 
     if (overallScore >= 80) {
       trustRating = 'HIGH TRUST';
+      riskLevel = 'low';
       badgeColor = '#10b981'; // Green
     } else if (overallScore >= 60) {
       trustRating = 'MODERATE TRUST';
+      riskLevel = 'medium';
       badgeColor = '#3b82f6'; // Blue
     } else if (overallScore >= 40) {
       trustRating = 'SUSPICIOUS / UNVERIFIED';
+      riskLevel = 'high';
       badgeColor = '#f97316'; // Orange
     } else {
       trustRating = 'HIGH RISK / MISLEADING';
+      riskLevel = 'critical';
       badgeColor = '#ef4444'; // Red
     }
 
@@ -75,6 +80,7 @@ class ScoringEngine {
       title: postData.title,
       overallScore,
       trustRating,
+      riskLevel,
       badgeColor,
       evaluatedAt: new Date().toISOString(),
 
