@@ -1,7 +1,7 @@
 const scoringEngine = require('../services/scoringEngine');
 
 async function testBackendEngine() {
-  console.log('Testing Reddit Validator Backend Scoring Engine...\n');
+  console.log('Testing Red Valley Backend Scoring Engine...\n');
 
   const testPayload = {
     id: 't3_sample123',

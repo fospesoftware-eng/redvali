@@ -32,7 +32,7 @@ router.post('/validate', async (req, res) => {
 router.get('/health', (req, res) => {
   res.json({
     status: 'ok',
-    service: 'Reddit Validator Backend API',
+    service: 'Red Valley Backend API',
     timestamp: new Date().toISOString()
   });
 });

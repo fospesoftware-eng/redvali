@@ -1,12 +1,12 @@
 ---
-name: reddit-validator-skill
+name: red-valley-skill
 description: AI analysis skill for evaluating Reddit community post engagement authenticity, factual lead truthfulness, synthetic AI content probability, and source credibility.
 version: 1.0.0
 ---
 
-# 🛡️ Reddit Validator Skill & Evaluation Prompts
+# 🛡️ Red Valley Skill & Evaluation Prompts
 
-This skill defines the authoritative multi-vector verification criteria used by the **Reddit Validator** backend and Chrome Extension to assess Reddit posts.
+This skill defines the authoritative multi-vector verification criteria used by the **Red Valley** backend and Chrome Extension to assess Reddit posts.
 
 ## 🎯 Evaluation Objectives
 

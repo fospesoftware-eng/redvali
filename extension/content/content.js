@@ -1,5 +1,5 @@
 (function () {
-  console.log('[RedditValidator Content Script] Loaded on Reddit.');
+  console.log('[RedValley Content Script] Loaded on Reddit.');
 
   // Store reports by permalink URL path
   const reportsByUrl = new Map();
@@ -194,7 +194,7 @@
 
       if (!response || response.status === 'error') {
         badgeBtn.innerHTML = `<span>⚠️ Error</span>`;
-        console.error('[RedditValidator] Error:', response ? response.message : 'No response');
+        console.error('[RedValley] Error:', response ? response.message : 'No response');
         return;
       }
 

@@ -5,7 +5,7 @@ const validationCache = new Map();
 
 // Service worker listeners
 chrome.runtime.onInstalled.addListener(() => {
-  console.log('[RedditValidator Background] Extension installed.');
+  console.log('[RedValley Background] Extension installed.');
   chrome.storage.local.get(['apiUrl'], (result) => {
     if (!result.apiUrl) {
       chrome.storage.local.set({ apiUrl: DEFAULT_API_URL, autoScan: false });

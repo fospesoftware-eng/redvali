@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "Reddit Validator - AI Authenticity & Fact Checker",
+  "name": "Red Valley - AI Authenticity & Fact Checker",
   "version": "1.0.0",
   "description": "Chrome extension to analyze Reddit post authenticity, claim verifiability, AI content probability, source credibility, and author signals.",
   "permissions": [
@@ -32,7 +32,7 @@
   ],
   "action": {
     "default_popup": "popup/popup.html",
-    "default_title": "Reddit Validator",
+    "default_title": "Red Valley",
     "default_icon": "icons/icon48.png"
   },
   "icons": {

@@ -1,7 +1,7 @@
 {
-  "name": "reddit-validator-backend",
+  "name": "red-valley-backend",
   "version": "1.0.0",
-  "description": "Backend API server for Reddit Authenticity & Fact Check Validator",
+  "description": "Backend API server for Red Valley Authenticity & Fact Check Validator",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
