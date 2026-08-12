@@ -10,13 +10,31 @@ class SourceVerifier {
     const allUrls = Array.from(new Set([...links, ...extractedUrls]));
 
     if (allUrls.length === 0) {
+      // Dynamic non-link evaluation based on post intent
+      let sourceScore = 75; // Default clean internal discussion
+      let summary = "Clean internal discussion post without external links.";
+
+      const dmTrapRegex = /\b(dm me|message me|send me a dm|drop a comment for link|link in bio|check my profile)\b/i;
+      const questionRegex = /\b(how to|ideas|advice|tips|help|seeking|question|anyone know|what is|why does)\b/i;
+
+      if (dmTrapRegex.test(text)) {
+        sourceScore = 40;
+        summary = "No links in post, but directs users to DMs/profile for hidden lead capture.";
+      } else if (questionRegex.test(text)) {
+        sourceScore = 82;
+        summary = "Organic question post seeking community input (no external links needed).";
+      } else if (postData.mediaUrls && postData.mediaUrls.length > 0) {
+        sourceScore = 80;
+        summary = "Includes direct Reddit media/image attachments.";
+      }
+
       return {
-        sourceScore: 60,
+        sourceScore,
         linkCount: 0,
         trustedCount: 0,
         suspiciousCount: 0,
         details: [],
-        summary: "No external references or links provided in post."
+        summary
       };
     }
 
@@ -35,7 +53,7 @@ class SourceVerifier {
     const lowTrustPatterns = [
       /bit\.ly/, /tinyurl\.com/, /t\.co/, /is\.gd/, /goo\.gl/,
       /free-money/i, /crypto-gain/i, /miracle-cure/i, /truth-exposed/i,
-      /telegram\.me/, /t\.me/
+      /telegram\.me/, /t\.me/, /typeform\.com/, /calendly\.com/
     ];
 
     allUrls.forEach(urlStr => {
@@ -62,7 +80,7 @@ class SourceVerifier {
         } else if (lowTrustPatterns.some(pattern => pattern.test(urlStr))) {
           rating = 'suspicious';
           trustValue = 25;
-          note = 'URL shortener, obfuscated link, or suspicious domain pattern';
+          note = 'URL shortener, lead form, or suspicious domain pattern';
           suspiciousCount++;
         } else if (!isHttps) {
           rating = 'caution';

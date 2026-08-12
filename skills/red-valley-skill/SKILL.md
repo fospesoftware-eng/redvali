@@ -1,74 +1,88 @@
 ---
 name: red-valley-skill
-description: AI analysis skill for evaluating Reddit community post engagement authenticity, factual lead truthfulness, synthetic AI content probability, and source credibility.
-version: 1.0.0
+description: Authoritative multi-vector scoring skill for evaluating Reddit community post engagement authenticity, factual lead truthfulness, synthetic AI content probability, and source credibility.
+version: 2.0.0
 ---
 
-# 🛡️ Red Valley Skill & Evaluation Prompts
+# 🛡️ Red Valley Authoritative Multi-Vector Verification Skill
 
-This skill defines the authoritative multi-vector verification criteria used by the **Red Valley** backend and Chrome Extension to assess Reddit posts.
+This skill defines the production-ready multi-vector evaluation engine used by **Red Valley** to assess Reddit posts.
 
-## 🎯 Evaluation Objectives
+---
 
-Every post is evaluated across **Two Primary Highlighted Scores** and supporting AI/account vectors:
+## 📊 Dual Primary Highlighted Scores
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│ 1. 💬 COMMUNITY ENGAGEMENT SCORE (0-100%)                                   │
-│    Evaluates if the post is a genuine, organic community discussion vs      │
-│    self-promotion plug, covert product advertisement, or engagement bait.  │
+│ 💬 1. COMMUNITY ENGAGEMENT AUTHENTICITY SCORE (0-100%)                      │
+│       Measures whether a post is a genuine, organic community discussion     │
+│       versus a covert self-promotion plug, DM lead trap, or upvote bait.   │
 ├─────────────────────────────────────────────────────────────────────────────┤
-│ 2. 🎯 FACTUAL & LEAD TRUTHFULNESS SCORE (0-100%)                            │
-│    Evaluates if claims, financial metrics (MRR/ARR), advice, links, and    │
-│    leads are authentic vs false leads, fake revenue, or deceptive pitches.  │
-├─────────────────────────────────────────────────────────────────────────────┤
-│ 3. 🤖 AI SYNTHETIC CONTENT INDEX (0-100%)                                   │
-│    Measures probability of AI language model generation vs human writing.  │
+│ 🎯 2. FACTUAL & LEAD TRUTHFULNESS SCORE (0-100%)                            │
+│       Measures whether financial figures (MRR/ARR), achievement claims,      │
+│       growth advice, and external links are authentic vs false leads.       │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## 1. 💬 Community Engagement Authenticity Criteria
+## 🧩 The 4 Underlying Vector Engine Specifications
 
-### High Engagement Authenticity (80 - 100%)
-- **Organic Discussion**: User shares genuine personal experiences, asks transparent questions, or seeks constructive community feedback.
-- **No Hidden Agenda**: Post does not link to low-trust landing pages, lead capture forms, or undisclosed affiliate products.
-- **Relatable Tone**: Natural, informal conversational language with authentic Reddit idioms.
-
-### Low Engagement / Spam Risk (< 50%)
-- **Covert Self-Promotion**: Post frames a product pitch as a "vibe coded project", "launch story", or "free tool" to bypass subreddit self-promotion rules.
-- **Lead Capture Trap**: Directs users to DMs ("DM me for access"), gated landing pages, or Discord channels for lead collection.
-- **Engagement Bait**: Generic, controversial, or hyperbolic titles designed purely to farm upvotes and comments for account warming.
+| Vector Name | Icon | Weight | Scale Range | Evaluation Factors |
+|---|:---:|:---:|:---:|---|
+| **Factual Claim Assertions** | 📌 | 30% | 0 - 100 | Statistical assertions, financial revenue claims ($MRR), verifiability, subjectivity vs objectivity. |
+| **AI Synthetic Text Index** | 🤖 | 25% | 0 - 100 | LLM vocabulary frequency, sentence length burstiness, markdown formatting, Reddit colloquialisms. |
+| **Link & Source Credibility** | 🔗 | 25% | 0 - 100 | Domain TLD trust (.gov/.edu/github = high, bit.ly/t.me/typeform = low), DM trap detection without links. |
+| **Author Account Signals** | 👤 | 20% | 0 - 100 | Handle syntax (custom organic vs throwaway `Ad_1234`), karma post-to-comment ratio, account age. |
 
 ---
 
-## 2. 🎯 Factual & Lead Truthfulness Criteria
+## 📈 Score Rating Scale Definitions
 
-### High Truthfulness (80 - 100%)
-- **Verifiable Evidence**: Includes verifiable links (GitHub repos, official documentation, peer-reviewed research, trusted news domains).
-- **Realistic Metrics**: Financial or growth figures (e.g. $500 MRR, 100 users over 6 months) align with standard early-stage benchmarks without unverified claims.
-
-### False Lead / Deceptive Risk (< 50%)
-- **Unverified Financial Bragging**: Claims rapid revenue (e.g. "$1,169 MRR in 10 days vibe coding") without public proof, open metrics, or third-party validation.
-- **False Leads / Misleading Advice**: Promises guaranteed customer acquisition hacks, secret shortcuts, or deceptive marketing schemes.
-- **Obfuscated Links**: Uses URL shorteners, redirect trackers, or domain parking sites.
+| Score Range | Trust Level | Badge Color | Primary Rating Tag | Description |
+|:---:|:---:|:---:|:---:|---|
+| **80 - 100%** | **HIGH TRUST** | `#10b981` (Green) | `ORGANIC` / `GENUINE` | Transparent community post with verifiable claims and natural language. |
+| **60 - 79%** | **MODERATE** | `#3b82f6` (Blue) | `MODERATE` | Standard discussion post with minor unverified claims or personal opinion. |
+| **40 - 59%** | **SUSPICIOUS** | `#f97316` (Orange) | `COVERT PLUG` / `UNVERIFIED` | Disguised self-promotion, unverified revenue brag, or DM lead trap. |
+| **0 - 39%** | **CRITICAL RISK** | `#ef4444` (Red) | `FALSE LEAD` / `SPAM` | Misleading claim, obfuscated phishing link, or synthetic LLM marketing bot. |
 
 ---
 
-## 3. 🤖 AI Synthetic Content Detection
+## 🔍 Specific Post Category Heuristics
 
-### Key Indicators of AI Generation
-- **Synthetic Vocabulary**: Heavy usage of LLM transition words: `delve`, `tapestry`, `moreover`, `furthermore`, `testament`, `pivotal`, `beacon`, `realm`, `multifaceted`.
-- **Low Burstiness**: Extremely uniform sentence lengths and perfect grammatical structure without colloquial pauses.
-- **Markdown Formatting**: Default LLM list layouts (bullet points with bold headers for every item).
+### 1. Question / Help Seeking Posts
+- **Title Examples**: *"I need some ideas on how to get to some money ASAP"*, *"How do I find early adopters?"*
+- **Vector Profile**:
+  - 📌 Claim Assertions: **85/100** (Zero false claims, seeking input)
+  - 🤖 AI Text Index: **95/100** (Expressive human phrasing with `ASAP`, `!!!`)
+  - 🔗 Source Credibility: **80/100** (Clean internal discussion)
+  - 👤 Account Signals: **85/100** (Organic handle `Real_dranksipper`)
+  - **Result**: `💬 88% ORGANIC` | `🎯 84% GENUINE`
+
+### 2. Milestone / Personal Experience Posts
+- **Title Examples**: *"After 36 technical interviews, I finally bagged an offer"*, *"Built my first app"*
+- **Vector Profile**:
+  - 📌 Claim Assertions: **75/100** (Personal milestone assertion)
+  - 🤖 AI Text Index: **92/100** (Natural human experience narrative)
+  - 🔗 Source Credibility: **75/100** (Image attachment proof)
+  - 👤 Account Signals: **85/100** (Established handle `deathmachine1407`)
+  - **Result**: `💬 84% ORGANIC` | `🎯 78% GENUINE`
+
+### 3. Covert Product Plug / Lead Traps
+- **Title Examples**: *"Funding 5 builders with $500 in AI credits + our time to launch a micro SaaS"*
+- **Vector Profile**:
+  - 📌 Claim Assertions: **50/100** (Unverified credit giveaway / lead magnet)
+  - 🤖 AI Text Index: **65/100** (Marketing copy phrasing)
+  - 🔗 Source Credibility: **45/100** (Gated signup / DM lead capture)
+  - 👤 Account Signals: **75/100** (Self-promo account profile)
+  - **Result**: `💬 52% COVERT PLUG` | `🎯 48% UNVERIFIED LEAD`
 
 ---
 
-## 4. LLM Analysis System Prompt Template
+## 🤖 LLM Prompt System Template
 
 ```json
 {
-  "system_prompt": "You are the Reddit Authenticity & Fact Check Validator. Analyze the Reddit post for Community Engagement Authenticity (0-100), Factual & Lead Truthfulness (0-100), and AI Text Probability (0.0-1.0). Return JSON containing engagementScore, leadTruthfulnessScore, aiProbability, keyFlags, and extractedClaims."
+  "system_prompt": "You are the Red Valley Authenticity Validator. Evaluate the Reddit post across Community Engagement (0-100) and Lead Truthfulness (0-100). Calculate AI Synthetic Probability (0.0-1.0), Source Domain Credibility (0-100), and Account Risk. Return JSON formatted output with primaryScores, vectorBreakdown, and keyFlags."
 }
 ```
